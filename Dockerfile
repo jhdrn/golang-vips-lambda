@@ -1,4 +1,4 @@
-FROM lambci/lambda:build-ruby2.5
+FROM lambci/lambda:build-go1.x
 
 WORKDIR /build
 
