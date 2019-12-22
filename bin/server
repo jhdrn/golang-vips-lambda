@@ -2,6 +2,6 @@
 
 set -e
 
-IMAGE_NAME=ruby-vips-lambda
+IMAGE_NAME=go-vips-lambda
 
 docker run -it -v "${PWD}:/var/task" --rm $IMAGE_NAME bash

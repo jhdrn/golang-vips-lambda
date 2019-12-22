@@ -2,6 +2,6 @@
 
 set -e
 
-IMAGE_NAME=ruby-vips-lambda
+IMAGE_NAME=go-vips-lambda
 
 docker rmi --force $IMAGE_NAME
