@@ -32,17 +32,22 @@ RUN cd ./libvips && \
   echo /opt/lib > /etc/ld.so.conf.d/libvips.conf && \
   ldconfig
 
-# Copy only needed so files to new share/lib.
+# Copy only needed files to new share/lib and share/bin
 #
 RUN mkdir -p share/lib && \
   cp -a $INSTALLDIR/lib/libvips.so* $WORKDIR/share/lib/
+RUN mkdir -p share/bin && \
+  cp -a $INSTALLDIR/bin/vips $WORKDIR/share/bin/ && \
+  cp -a $INSTALLDIR/bin/vipsheader $WORKDIR/share/bin/ && \
+  cp -a $INSTALLDIR/bin/vipsedit $WORKDIR/share/bin/ && \
+  cp -a $INSTALLDIR/bin/vipsthumbnail $WORKDIR/share/bin/
 
 # Create sym links for ruby-ffi gem's `glib_libname` and `gobject_libname` to work.
-RUN cd ./share/lib/ && \
-  ln -s /usr/lib64/libglib-2.0.so.0 libglib-2.0.so && \
-  ln -s /usr/lib64/libgobject-2.0.so.0 libgobject-2.0.so
+#RUN cd ./share/lib/ && \
+#  ln -s /usr/lib64/libglib-2.0.so.0 libglib-2.0.so && \
+#  ln -s /usr/lib64/libgobject-2.0.so.0 libgobject-2.0.so
 
-# Zip up contents so final `lib` can be placed in /opt layer.
+# Zip up contents so final `lib` and `bin` can be placed in /opt layer.
 #
 RUN cd ./share && \
   zip --symlinks -r libvips.zip .

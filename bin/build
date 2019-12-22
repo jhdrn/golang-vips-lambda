@@ -3,7 +3,7 @@
 set -e
 
 IMAGE_NAME=go-vips-lambda
-VIPS_VERSION=${VIPS_VERSION:=8.8.4}
+VIPS_VERSION=${VIPS_VERSION:=8.9.0-beta1}
 
 rm -rf ./share
 mkdir ./share
@@ -16,4 +16,4 @@ docker build \
 docker run --rm \
   -v "${PWD}/share:/share" \
   $IMAGE_NAME \
-  sh -c "cp /build/share/libvips.zip /share"
+  sh -c "cp -r /build/share/* /share"
