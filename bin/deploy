@@ -5,6 +5,6 @@ set -e
 ./bin/build
 
 aws lambda publish-layer-version \
-  --layer-name "govips890beta1" \
+  --layer-name "govips8102" \
   --description "libvips for use by govips" \
   --zip-file "fileb://$(pwd)/share/libvips.zip"

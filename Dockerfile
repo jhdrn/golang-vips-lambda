@@ -2,7 +2,7 @@ FROM lambci/lambda:build-go1.x
 
 WORKDIR /build
 
-ARG VIPS_VERSION=8.8.4
+ARG VIPS_VERSION=8.10.2
 
 ENV WORKDIR="/build"
 ENV INSTALLDIR="/opt"

@@ -3,7 +3,7 @@
 set -e
 
 IMAGE_NAME=go-vips-lambda
-VIPS_VERSION=${VIPS_VERSION:=8.9.0-beta1}
+VIPS_VERSION=${VIPS_VERSION:=8.10.2}
 
 rm -rf ./share
 mkdir ./share
