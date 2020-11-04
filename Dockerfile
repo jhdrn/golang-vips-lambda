@@ -4,50 +4,129 @@ WORKDIR /build
 
 ARG VIPS_VERSION=8.10.2
 
-ENV WORKDIR="/build"
-ENV INSTALLDIR="/opt"
 ENV VIPS_VERSION=$VIPS_VERSION
+ENV PATH=/opt/bin:$PATH
+ENV LD_LIBRARY_PATH=/opt/lib:/opt/lib64:$LD_LIBRARY_PATH
+ENV PKG_CONFIG_PATH=/opt/lib/pkgconfig:/opt/lib64/pkgconfig
+ENV CFLAGS="-fexceptions -Wall -O3"
+ENV CXXFLAGS="${CFLAGS}"
 
-# Install deps for libvips. Details: https://libvips.github.io/libvips/install.html
+# Setup Some Dirs
 #
-RUN yum install -y \
-  gtk-doc \
-  gobject-introspection \
-  gobject-introspection-devel
+RUN mkdir -p \
+    share/lib \
+    share/include
 
-# Clone repo and checkout version tag.
+# Install expat
 #
-RUN git clone git://github.com/libvips/libvips.git && \
-  cd libvips && \
-  git checkout "v${VIPS_VERSION}"
+RUN curl https://codeload.github.com/libexpat/libexpat/zip/R_2_2_9 > libexpat-R_2_2_9.zip && \
+    unzip libexpat-R_2_2_9.zip && \
+    rm libexpat-R_2_2_9.zip && \
+    cd ./libexpat-R_2_2_9/expat && \
+    ./buildconf.sh && \
+    ./configure --prefix=/opt && \
+    make install 
 
-# Compile from source.
+RUN cp -a /opt/lib/libexpat.so* /build/share/lib
+
+# Install libpng
 #
-RUN cd ./libvips && \
-  CC=clang CXX=clang++ \
-  ./autogen.sh \
-  --prefix=${INSTALLDIR} \
-  --disable-static && \
-  make install && \
-  echo /opt/lib > /etc/ld.so.conf.d/libvips.conf && \
-  ldconfig
+RUN curl -L https://downloads.sourceforge.net/libpng/libpng-1.6.37.tar.xz > libpng-1.6.37.tar.xz && \
+    tar -xf libpng-1.6.37.tar.xz && \
+    rm libpng-1.6.37.tar.xz && \
+    cd libpng-1.6.37 && \
+    ./configure --prefix=/opt --disable-static && \
+    make && \
+    make install
 
-# Copy only needed files to new share/lib and share/bin
+RUN cp -a /opt/lib/libpng.so* /build/share/lib && \
+    cp -a /opt/lib/libpng16.so* /build/share/lib
+
+# Install giflib
 #
-RUN mkdir -p share/lib && \
-  cp -a $INSTALLDIR/lib/libvips.so* $WORKDIR/share/lib/
-RUN mkdir -p share/bin && \
-  cp -a $INSTALLDIR/bin/vips $WORKDIR/share/bin/ && \
-  cp -a $INSTALLDIR/bin/vipsheader $WORKDIR/share/bin/ && \
-  cp -a $INSTALLDIR/bin/vipsedit $WORKDIR/share/bin/ && \
-  cp -a $INSTALLDIR/bin/vipsthumbnail $WORKDIR/share/bin/
+RUN curl -L https://sourceforge.net/projects/giflib/files/giflib-5.2.1.tar.gz > giflib-5.2.1.tar.gz && \
+    tar -xf giflib-5.2.1.tar.gz && \
+    rm giflib-5.2.1.tar.gz && \
+    cd giflib-5.2.1 && \
+    make && \
+    make PREFIX=/opt install
 
-# Create sym links for ruby-ffi gem's `glib_libname` and `gobject_libname` to work.
-#RUN cd ./share/lib/ && \
-#  ln -s /usr/lib64/libglib-2.0.so.0 libglib-2.0.so && \
-#  ln -s /usr/lib64/libgobject-2.0.so.0 libgobject-2.0.so
+RUN cp -a /opt/lib/libgif.so* /build/share/lib
 
-# Zip up contents so final `lib` and `bin` can be placed in /opt layer.
+# Install libjpeg-turbo
+#
+RUN curl -L https://downloads.sourceforge.net/libjpeg-turbo/libjpeg-turbo-2.0.4.tar.gz > libjpeg-turbo-2.0.4.tar.gz && \
+    tar -xf libjpeg-turbo-2.0.4.tar.gz && \
+    rm libjpeg-turbo-2.0.4.tar.gz && \
+    cd libjpeg-turbo-2.0.4 && \
+    cmake -DCMAKE_INSTALL_PREFIX=/opt && \
+    make && \
+    make install
+
+RUN cp -a /opt/lib64/libjpeg.so* /build/share/lib && \
+    cp -a /opt/lib64/libturbojpeg.so* /build/share/lib
+
+# Install libimagequant
+#
+RUN git clone https://github.com/ImageOptim/libimagequant.git && \
+    cd ./libimagequant && \
+    git checkout 2.12.6 && \
+    ./configure --prefix=/opt && \
+    make libimagequant.so && \
+    make install && \
+    echo /opt/lib > /etc/ld.so.conf.d/libimagequant.conf && \
+    ldconfig
+
+RUN cp -a /opt/lib/libimagequant.so* /build/share/lib/ && \
+    cp -a /opt/include/libimagequant.h /build/share/include/
+
+# Install libfftw
+#
+RUN curl -L http://www.fftw.org/fftw-3.3.8.tar.gz > fftw-3.3.8.tar.gz && \
+    tar -xf fftw-3.3.8.tar.gz && \
+    rm fftw-3.3.8.tar.gz && \
+    cd ./fftw-3.3.8 && \
+    ./configure \
+      --prefix=/opt \
+      --enable-shared \
+      --disable-static \
+      --enable-threads \
+      --enable-sse2 \
+      --enable-avx && \
+    make && \
+    make install
+
+RUN cp -a /opt/lib/libfftw3* /build/share/lib/
+
+# Install libvips.
+#
+RUN curl -L https://github.com/libvips/libvips/releases/download/v${VIPS_VERSION}/vips-${VIPS_VERSION}.tar.gz > vips-${VIPS_VERSION}.tar.gz && \
+    tar -xf vips-${VIPS_VERSION}.tar.gz && \
+    rm vips-${VIPS_VERSION}.tar.gz && \
+    cd vips-${VIPS_VERSION} && \
+    ./configure \
+      --prefix=/opt \
+      --disable-gtk-doc \
+      --without-magick \
+      --with-expat=/opt \
+      --with-giflib-includes=/opt/local/include \
+      --with-giflib-libraries=/opt/local/lib && \
+    make && \
+    make install && \
+    echo /opt/lib > /etc/ld.so.conf.d/libvips.conf && \
+    ldconfig
+
+RUN cp -a /opt/lib/libvips.so* /build/share/lib
+
+# Store the VIPS_VERSION variable in a file, accessible to the deploy script.
+#
+RUN echo $VIPS_VERSION > "./share/VIPS_VERSION"
+
+# Create an /build/share/opt/lib64 symlink for shared objects.
+#
+RUN cd ./share && ln -s lib lib64
+
+# Zip up contents so final `lib` can be placed in /opt layer.
 #
 RUN cd ./share && \
-  zip --symlinks -r libvips.zip .
+    zip --symlinks -r libvips.zip .
