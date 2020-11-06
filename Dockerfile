@@ -25,7 +25,7 @@ RUN curl https://codeload.github.com/libexpat/libexpat/zip/R_2_2_9 > libexpat-R_
     cd ./libexpat-R_2_2_9/expat && \
     ./buildconf.sh && \
     ./configure --prefix=/opt && \
-    make install 
+    make install
 
 RUN cp -a /opt/lib/libexpat.so* /build/share/lib
 
@@ -97,6 +97,31 @@ RUN curl -L http://www.fftw.org/fftw-3.3.8.tar.gz > fftw-3.3.8.tar.gz && \
     make install
 
 RUN cp -a /opt/lib/libfftw3* /build/share/lib/
+
+# Install libvips primary deps https://libvips.github.io/libvips/install.html
+#
+RUN yum install -y \
+    gtk-doc \
+    ninja-build
+
+RUN pip3 install meson && \
+    pip3 install ninja
+
+RUN curl -L http://ftp.gnome.org/pub/gnome/sources/glib/2.64/glib-2.64.2.tar.xz > glib-2.64.2.tar.xz && \
+    tar -xf glib-2.64.2.tar.xz && \
+    rm glib-2.64.2.tar.xz && \
+    cd glib-2.64.2 && \
+    mkdir ./_build && \
+    cd ./_build && \
+    meson --prefix=/opt .. && \
+    ninja && \
+    ninja install
+
+RUN cp -a /opt/lib64/libgio-2.0.so* /build/share/lib && \
+    cp -a /opt/lib64/libglib-2.0.so* /build/share/lib && \
+    cp -a /opt/lib64/libgmodule-2.0.so* /build/share/lib && \
+    cp -a /opt/lib64/libgobject-2.0.so* /build/share/lib && \
+    cp -a /opt/lib64/libgthread-2.0.so* /build/share/lib
 
 # Install libvips.
 #
